@@ -1,0 +1,13 @@
+prefix=D:/Me/work/Ahmed Payment/apiapp_main_final_Copy/apiapp_main_final_Copy/apiapp_main_final/venv/Library
+exec_prefix=D:/Me/work/Ahmed Payment/apiapp_main_final_Copy/apiapp_main_final_Copy/apiapp_main_final/venv/Library
+libdir=D:/Me/work/Ahmed Payment/apiapp_main_final_Copy/apiapp_main_final_Copy/apiapp_main_final/venv/Library/lib
+sharedlibdir=D:/Me/work/Ahmed Payment/apiapp_main_final_Copy/apiapp_main_final_Copy/apiapp_main_final/venv/Library/lib
+includedir=D:/Me/work/Ahmed Payment/apiapp_main_final_Copy/apiapp_main_final_Copy/apiapp_main_final/venv/Library/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.13
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}
