@@ -1,4 +1,4 @@
-# main.py (Flask Blueprint)
+
 
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify
 from app.forms import LoginForm, SignupForm, EditUserForm, AdminSignupForm
@@ -119,7 +119,7 @@ def view_user(user_id):
 def edit_user(user_id):
     
     user = User.query.get_or_404(user_id)
-
+    
     form = EditUserForm(request.form if request.method == 'POST' else None, obj=user)
     email_exists = False 
 
@@ -129,7 +129,7 @@ def edit_user(user_id):
             existing_user_with_new_email = User.query.filter(User.email == form.email.data, User.id != user_id).first()
             if existing_user_with_new_email:
                 form.email.errors.append("This email address is already registered by another user.")
-              
+                
             
         if not form.errors: 
             user.name = form.name.data
@@ -147,7 +147,7 @@ def edit_user(user_id):
                 logger.error(f"Error updating user {user_id}: {e}")
                 flash('An error occurred while updating the user.', 'danger')
     
-   
+    
     return render_template('edit_user.html', form=form, user=user) 
 
 @main.route('/user/delete/<int:user_id>')
@@ -215,7 +215,7 @@ def login():
         elif admin:
             if check_password_hash(admin.password, form.password.data):  
                 session.clear() 
-                session['admin_id'] = admin.id  #
+                session['admin_id'] = admin.id  
                 flash('Admin login successful!', 'success')
                 return redirect(url_for('main.dashboard'))  
             else:
@@ -236,9 +236,9 @@ def signup():
         existing_admin = Admin.query.filter_by(email=form.email.data).first()
 
         if existing_user or existing_admin:
-            email_exists = True  # Email already exists in either table
+            email_exists = True  
         else:
-            hashed_password = generate_password_hash(form.password.data)  # Hash the password
+            hashed_password = generate_password_hash(form.password.data)  
             user = User(
                 name=form.name.data, 
                 email=form.email.data, 
@@ -252,7 +252,7 @@ def signup():
                 return redirect(url_for('main.login'))
             except Exception as e:
                 db.session.rollback()
-                print(f"[SIGNUP ERROR] {e}")  # <-- Add this line
+                print(f"[SIGNUP ERROR] {e}")  
                 flash(f"An error occurred: {str(e)}", 'danger')
 
     return render_template('signup.html', form=form, email_exists=email_exists)
@@ -261,14 +261,14 @@ def signup():
 def pricing():
     apis = API.query.all()
 
-    # Convert to serializable format
-    serializable_apis = [api.to_dict() for api in apis]  # Use to_dict() here
+    
+    serializable_apis = [api.to_dict() for api in apis]  
 
     return render_template(
         'pricing.html',
-        apis=apis,  # Pass the full API objects (for rendering)
-        apis_json=serializable_apis,  # Pass the serialized APIs for JavaScript
-        paymob_iframe_id=os.environ.get('PAYMOB_IFRAME_ID')  # Pass IFRAME ID if needed in JS
+        apis=apis,  
+        apis_json=serializable_apis,  
+        paymob_iframe_id=os.environ.get('PAYMOB_IFRAME_ID')  
     )
 @main.route('/add_admin', methods=['GET', 'POST'])
 def add_admin():
@@ -335,11 +335,11 @@ def create_paymob_order(auth_token, amount):
         "merchant_order_id": str(uuid.uuid4()),
         "items": [{"name": "API", "amount_cents": int(amount * 100), "quantity": 1}]
     }
-    logger.info(f"Paymob Order Request: {order_data}") # ADD LOGGING
+    logger.info(f"Paymob Order Request: {order_data}") 
     response = requests.post(f"{PAYMOB_API_URL}/ecommerce/orders", json=order_data)
-    logger.info(f"Paymob Order Response Status: {response.status_code}") # ADD LOGGING
-    logger.info(f"Paymob Order Response JSON: {response.json()}") # ADD LOGGING
-    response.raise_for_status() # Keep this to catch HTTP errors
+    logger.info(f"Paymob Order Response Status: {response.status_code}") 
+    logger.info(f"Paymob Order Response JSON: {response.json()}") 
+    response.raise_for_status() 
     return response.json().get("id")
 
 def get_paymob_payment_key(auth_token, order_id, amount, billing_data):
@@ -419,7 +419,7 @@ def payment_success():
         logger.warning(f"--- /payment-success: Missing user_id ({user_id}) or transaction_id_from_url ({transaction_id_from_url}). Redirecting to pricing. ---")
         return redirect(url_for("main.pricing"))
 
-    # user = User.query.get(user_id) # Not strictly needed here if only using user_id for query
+    # user = User.query.get(user_id) 
     # if not user:
     #     flash("User not found for current session.", "danger")
     #     logger.warning(f"--- /payment-success: User not found for user_id {user_id}. Redirecting to login. ---")
@@ -427,12 +427,12 @@ def payment_success():
 
     api_key_to_display = None
     purchased_api_record = None
-    message_for_template = "Your payment was successful." # Default message if key is found
+    message_for_template = "Your payment was successful." 
 
-    # --- Increased Retry Logic ---
+    
     attempts = 0
-    max_attempts = 10  # Try for up to 10 seconds (10 * 1s)
-    retry_delay = 1   # Wait 1 second between attempts
+    max_attempts = 10  
+    retry_delay = 1   
 
     while attempts < max_attempts:
         logger.info(f"--- /payment-success: Attempt {attempts + 1}/{max_attempts} to find PurchasedAPI for transaction_id={transaction_id_from_url}, user_id={user_id} ---")
@@ -445,12 +445,12 @@ def payment_success():
             api_key_to_display = purchased_api_record.api_key
             logger.info(f"--- /payment-success: SUCCESS! Found API Key: {api_key_to_display} on attempt {attempts + 1} ---")
             message_for_template = "Keep this key safe. You'll need it to access the API."
-      
+            
         elif purchased_api_record and not purchased_api_record.api_key:
             logger.warning(f"--- /payment-success: Record found for {transaction_id_from_url} on attempt {attempts + 1}, but api_key is NULL. Callback might have failed to set it. ---")
-            
+
             message_for_template = "Your payment is confirmed, but there was an issue retrieving the API key. Please check your email or contact support."
-           
+            
 
         attempts += 1
         if attempts < max_attempts:
@@ -476,7 +476,7 @@ def payment_callback():
 
     logger.info(f"--- /payment-callback: Received data: {data} ---")
 
-
+    
     transaction_obj = data.get("obj", {})
     is_success = transaction_obj.get("success")
     paymob_transaction_id = str(transaction_obj.get("id", "")) 
@@ -485,33 +485,34 @@ def payment_callback():
     if is_success is not True: 
         logger.warning(f"--- /payment-callback: Unsuccessful payment or missing success flag. Success: {is_success}, TXN_ID: {paymob_transaction_id} ---")
         return jsonify({"error": "Unsuccessful payment"}), 400 
+
     if not paymob_transaction_id or not paymob_order_id_from_callback:
         logger.error(f"--- /payment-callback: Missing transaction_id ({paymob_transaction_id}) or order_id ({paymob_order_id_from_callback}) in callback. Data: {data} ---")
         return jsonify({"error": "Missing required payment details"}), 400
 
-   
+    
     paymob_order_record = PaymobOrder.query.filter_by(order_id=paymob_order_id_from_callback).first()
     if not paymob_order_record:
         logger.error(f"--- /payment-callback: PaymobOrder not found in DB for order_id: {paymob_order_id_from_callback} ---")
-    
+
         return jsonify({"error": "Order not found in system"}), 404 
 
     user = User.query.get(paymob_order_record.user_id)
     if not user:
         logger.error(f"--- /payment-callback: User not found for user_id: {paymob_order_record.user_id} (from PaymobOrder {paymob_order_id_from_callback}) ---")
-        return jsonify({"error": "User not found"}), 404 # Or 200
+        return jsonify({"error": "User not found"}), 404 
 
     api_id_to_purchase = paymob_order_record.api_id
     logger.info(f"--- /payment-callback: Processing for User ID: {user.id}, API ID: {api_id_to_purchase}, Paymob TXN ID: {paymob_transaction_id} ---")
 
-   
+    
     existing_purchase = PurchasedAPI.query.filter_by(transaction_id=paymob_transaction_id).first()
     if existing_purchase:
         logger.info(f"--- /payment-callback: Transaction {paymob_transaction_id} already processed. API Key: {existing_purchase.api_key}. Sending 200 OK. ---")
-        
+
         return jsonify({"message": "Payment already processed"}), 200
 
-  
+    
     unique_string_for_key = f"{paymob_transaction_id}-{uuid.uuid4()}"
     api_key_generated = hashlib.sha256(unique_string_for_key.encode()).hexdigest()
     logger.info(f"--- /payment-callback: Generated API Key: {api_key_generated} for TXN_ID: {paymob_transaction_id} ---")
@@ -529,16 +530,16 @@ def payment_callback():
     except Exception as e:
         db.session.rollback()
         logger.error(f"--- /payment-callback: DATABASE ERROR saving PurchasedAPI for TXN_ID {paymob_transaction_id}: {e} ---")
-        return jsonify({"error": "Failed to save purchase record"}), 500 # 500 so Paymob might retry
+        return jsonify({"error": "Failed to save purchase record"}), 500 
 
-
+    
     try:
         logger.info(f"--- /payment-callback: Attempting to send API key email to {user.email} for TXN_ID: {paymob_transaction_id} ---")
         send_api_key_email(user.email, api_key_generated)
         logger.info(f"--- /payment-callback: Email sent successfully for TXN_ID: {paymob_transaction_id} ---")
     except Exception as e:
         logger.error(f"--- /payment-callback: FAILED to send email for TXN_ID {paymob_transaction_id}: {e} ---")
-       
+        
 
     return jsonify({"message": "API key delivered"}), 200
 @main.route('/logout')
